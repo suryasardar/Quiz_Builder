@@ -1,5 +1,4 @@
 Flask
 Flask-RESTful
-Flask-SQLAlchemy
-mysqlclient  # Python MySQL connector
+Flask-SQLAlchemy  # Python MySQL connector
 Werkzeug     # For password hashing
