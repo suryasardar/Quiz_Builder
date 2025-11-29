@@ -9,3 +9,4 @@ __pycache__/
 env/
 ENV/
 env.bak/
+node_modules/

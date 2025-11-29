@@ -6,16 +6,12 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import App from './App.jsx';
 import './index.css'; // Your main CSS file (where Tailwind directives are located)
 
+import HomePage from './pages/HomePage.jsx';
 // Import the page components we created
 import LoginPage from './pages/LoginPage.jsx';
 import SignupPage from './pages/SignupPage.jsx';
-
 // Placeholder Home Page Component
-const HomePage = () => (
-  <h1 className="text-4xl font-extrabold text-gray-800 text-center py-10">
-    Welcome to QuizApp! 🧠
-  </h1>
-);
+ 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
