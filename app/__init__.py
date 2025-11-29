@@ -10,15 +10,16 @@ db = SQLAlchemy()
 api = Api()
 
 def create_app(config_class=Config):
-    app = Flask(__name__)
+    app = Flask(__name__)     # <-- FIXED
     app.config.from_object(config_class)
 
-    # Initialize extensions with app (STEP 1: db and api are ready)
+    # Initialize extensions with app
     db.init_app(app)
-    api.init_app(app) # Initializes Flask-RESTful
+    
+    # Initialize Flask-RESTful with the app
+    api = Api(app)
 
-    # >>> FIX: Import and register RESTful resources (Controllers) HERE <<<
-    # This ensures the 'app' module is fully initialized before controllers/services are loaded.
+    # Import and register RESTful resources (Controllers)
     from .controllers.auth_controller import AuthRegister, AuthLogin, AuthLogout
 
     # Add resources to the API instance
