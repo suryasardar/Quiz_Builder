@@ -7,7 +7,6 @@ from config import Config
 
 # Initialize extensions outside the factory
 db = SQLAlchemy()
-api = Api()
 
 def create_app(config_class=Config):
     app = Flask(__name__)     # <-- FIXED
@@ -20,6 +19,10 @@ def create_app(config_class=Config):
     api = Api(app)
 
     # Import and register RESTful resources (Controllers)
+<<<<<<< HEAD
+=======
+    # This ensures the 'app' module is fully initialized before controllers/services are loaded.
+>>>>>>> d7c4e4c4d896bb2b2ef63b14688d0136cee378b6
     from .controllers.auth_controller import AuthRegister, AuthLogin, AuthLogout
 
     # Add resources to the API instance

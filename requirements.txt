@@ -2,3 +2,4 @@ Flask
 Flask-RESTful
 Flask-SQLAlchemy  # Python MySQL connector
 Werkzeug     # For password hashing
+psycopg2-binary
