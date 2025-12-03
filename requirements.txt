@@ -1,5 +1,9 @@
 Flask
 Flask-RESTful
-Flask-SQLAlchemy  # Python MySQL connector
+Flask-SQLAlchemy  # SQLAlchemy ORM
 Werkzeug     # For password hashing
 psycopg2-binary
+Flask-SocketIO
+python-socketio
+google-genai
+eventlet

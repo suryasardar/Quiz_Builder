@@ -1,32 +1,66 @@
-import React, { useState } from 'react';
-import { dummyQuizData } from '../data/dummyQuizData'; // Import the dummy data
-// import dummyQuizData from '../data/dummyQuizData.jsx';
+import React, { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
+
+// 1. Initialize SocketIO client outside the component
+// Connects to the Flask server running SocketIO
+const socket = io('http://127.0.0.1:5000'); 
 
 function HomePage() {
     const [topicInput, setTopicInput] = useState('');
-    const [quizData, setQuizData] = useState(null); // Will hold the 20 MCQs
+    const [quizData, setQuizData] = useState([]); // Array to store streamed questions
     const [loading, setLoading] = useState(false);
+    const [statusMessage, setStatusMessage] = useState('');
 
-    // Function to simulate the API call to the backend
+    useEffect(() => {
+        // --- SocketIO Event Listeners ---
+        
+        // This runs only once when the component mounts
+        socket.on('connect', () => {
+            console.log('Connected to Flask SocketIO');
+        });
+
+        socket.on('new_question', (question) => {
+            // 2. Add the new streamed question to the quizData array
+            setQuizData(prevData => [...prevData, question]);
+            // Optional: You can add logic here to scroll to the bottom
+        });
+        
+        socket.on('quiz_status', (data) => {
+            // 3. Update status messages and loading state based on backend events
+            setStatusMessage(data.message);
+            if (data.stage === 'START') {
+                setLoading(true);
+            } else if (data.stage === 'DONE' || data.stage === 'ERROR') {
+                setLoading(false);
+            }
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('Disconnected from SocketIO');
+            setLoading(false);
+            setStatusMessage('Connection lost. Please refresh.');
+        });
+
+        // Cleanup function: remove listeners when the component unmounts
+        return () => {
+            socket.off('connect');
+            socket.off('new_question');
+            socket.off('quiz_status');
+            socket.off('disconnect');
+        };
+    }, []); // Empty dependency array means this runs on mount/unmount only
+
     const generateQuiz = (e) => {
         e.preventDefault();
         if (!topicInput.trim()) return;
 
+        // Clear previous state before starting
+        setQuizData([]); 
+        setStatusMessage('Requesting quiz generation...');
         setLoading(true);
-        setQuizData(null); 
-        
-        // --- SIMULATE BACKEND API CALL ---
-        // In a real app, this is where you'd use fetch/axios:
-        // const response = await fetch('/api/generate-mcqs', { topic: topicInput });
-        
-        // Simulate a 1-2 second delay for the backend to "generate" the quiz
-        setTimeout(() => {
-            // Load the dummy data upon successful "generation"
-            setQuizData(dummyQuizData);
-            setLoading(false);
-            // Scroll to the quiz section for a better UX
-            document.getElementById('quiz-section')?.scrollIntoView({ behavior: 'smooth' });
-        }, 1500);
+
+        // 4. Emit the event to the Flask backend
+        socket.emit('generate_quiz', { topic: topicInput });
     };
     
     // Function to calculate the required score for 10 marks
@@ -39,15 +73,15 @@ function HomePage() {
                 {mcq.id}. {mcq.question}
             </p>
             <div className="space-y-2">
-                {mcq.options.map((option, index) => (
+                {/* Ensure mcq.options is an array before mapping */}
+                {(mcq.options || []).map((option, index) => (
                     <div key={index} className="flex items-center">
-                        {/* Using text-indigo-600 for the radio buttons/options */}
                         <input
                             type="radio"
                             name={`q-${mcq.id}`}
                             id={`q-${mcq.id}-opt-${index}`}
                             className="text-indigo-600 focus:ring-indigo-500"
-                            disabled // Disable inputs for viewing mode
+                            disabled // Disabled for initial viewing/streaming mode
                         />
                         <label 
                             htmlFor={`q-${mcq.id}-opt-${index}`} 
@@ -63,7 +97,7 @@ function HomePage() {
 
     return (
         <div className="space-y-12">
-            {/* Chatbot Input Area - Blue and White Theme */}
+            {/* Chatbot Input Area */}
             <div className="w-full max-w-2xl mx-auto py-12 px-4">
                 <h1 className="text-4xl font-extrabold text-indigo-600 mb-4 text-center">
                     Quiz Generator
@@ -91,21 +125,22 @@ function HomePage() {
                 </form>
             </div>
 
-            {/* Quiz Display Area */}
-            {loading && (
+            {/* Status and Loading Display */}
+            {(loading || statusMessage) && (
                 <div className="text-center text-indigo-600 text-lg">
-                    <p>Fetching 20 MCQs on "{topicInput}"...</p>
+                    <p className="p-4 bg-indigo-50 rounded-lg">{statusMessage}</p>
                 </div>
             )}
             
-            {quizData && (
+            {/* Quiz Display Area - Shows questions as they stream in */}
+            {quizData.length > 0 && (
                 <div id="quiz-section" className="w-full max-w-4xl mx-auto space-y-8 p-4">
                     <div className="text-center p-6 bg-indigo-50 rounded-xl shadow-inner border border-indigo-200">
                         <h2 className="text-3xl font-bold text-indigo-800 mb-2">
-                            Generated Quiz: {quizData[0]?.topic || 'New Topic'}
+                            Generated Quiz
                         </h2>
                         <p className="text-lg text-indigo-700">
-                            Total Questions: {quizData.length} | Test Requirement: Answer {requiredQuestions} Questions Correctly for 10 Marks.
+                            Total Questions Generated: {quizData.length} | Test Requirement: Answer {requiredQuestions} Questions Correctly for 10 Marks.
                         </p>
                     </div>
 
@@ -113,13 +148,16 @@ function HomePage() {
                         {quizData.map(renderMcqItem)}
                     </div>
                     
-                    <div className="pt-8 text-center">
-                        <button
-                            className="px-8 py-3 bg-indigo-600 text-white font-bold text-lg rounded-xl hover:bg-indigo-700 transition duration-200 shadow-2xl"
-                        >
-                            Submit Test
-                        </button>
-                    </div>
+                    {/* Only show the Submit button once the loading/streaming is done */}
+                    {!loading && quizData.length >= 20 && (
+                        <div className="pt-8 text-center">
+                            <button
+                                className="px-8 py-3 bg-indigo-600 text-white font-bold text-lg rounded-xl hover:bg-indigo-700 transition duration-200 shadow-2xl"
+                            >
+                                Submit Test
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
