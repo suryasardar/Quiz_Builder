@@ -3,8 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api
 from flask_socketio import SocketIO, emit
 from config import Config
+from dotenv import load_dotenv # Import load_dotenv
+import os
 
 # REMOVE: from .controllers.auth_controller import AuthRegister, AuthLogin, AuthLogout
+
+load_dotenv()
 
 # Initialize extensions outside the factory
 db = SQLAlchemy()
@@ -16,6 +20,10 @@ def create_app(config_class=Config):
 
     # Initialize extensions with app
     db.init_app(flask_app)
+    
+    flask_app.config['GEMINI_API_KEY'] = os.getenv('GEMINI_API_KEY')
+    if not flask_app.config['GEMINI_API_KEY']:
+        raise ValueError("GEMINI_API_KEY environment variable not set.")
     
     # Initialize Flask-RESTful with the app
     api = Api(flask_app)
