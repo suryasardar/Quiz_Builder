@@ -30,10 +30,7 @@ def create_app(config_class=Config):
     socketio.init_app(flask_app, cors_allowed_origins=["http://127.0.0.1:5173","http://localhost:5173"], async_mode='eventlet')
 
     # Import and register RESTful resources (Controllers)
-<<<<<<< HEAD
-=======
     # This ensures the 'app' module is fully initialized before controllers/services are loaded.
->>>>>>> d7c4e4c4d896bb2b2ef63b14688d0136cee378b6
     from .controllers.auth_controller import AuthRegister, AuthLogin, AuthLogout
 
     # Add resources to the API instance
